@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = [
+    "apps/studynotes",
+    "crates/database",
+]
+
+[workspace.dependencies]
+dotenvy = "0.15.7"
+anyhow = "1.0.102"
+tokio = { version = "1.50.0", features = ["full"] }
+log = "0.4.29"
+sea-orm = { version = "2.0.0-rc", features = [ 
+    "sqlx-sqlite",
+    "runtime-tokio",
+    "macros",
+    "debug-print",
+    "schema-sync",
+    "entity-registry",
+     ] }
+sea-orm-migration = "1.1.19"

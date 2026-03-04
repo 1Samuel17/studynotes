@@ -1,0 +1,27 @@
+// Database connection handled by SeaORM
+
+use sea_orm::{ConnectOptions, DatabaseConnection, DbErr};
+use std::time::Duration;
+use anyhow::{Result};
+
+pub async fn set_db_options() -> Result<ConnectOptions> {
+    let mut opt = ConnectOptions::new(dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file"));
+    opt.max_connections(100)
+        .min_connections(5)
+        .connect_timeout(Duration::from_secs(8))
+        .acquire_timeout(Duration::from_secs(8))
+        .idle_timeout(Duration::from_secs(8))
+        .max_lifetime(Duration::from_secs(8))
+        .sqlx_logging(false) // disable SQLx logging
+        .sqlx_logging_level(log::LevelFilter::Info)
+        .set_schema_search_path("studynotes"); // set default Postgres schema
+
+    Ok(opt)
+}
+
+pub async fn check_db(db: &DatabaseConnection) {
+    assert!(db.ping().await.is_ok());
+    let _ = db.clone().close().await;
+    assert!(matches!(db.ping().await, Err(DbErr::ConnectionAcquire(_))));
+    println!("Database connection Ok");
+}

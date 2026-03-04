@@ -1,0 +1,12 @@
+[package]
+name = "studynotes"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = "4.5.60"
+anyhow = { workspace = true }
+dotenvy = { workspace = true }
+tokio = { workspace = true }
+sea-orm = { workspace = true }
+database = { path = "../../crates/database" }
