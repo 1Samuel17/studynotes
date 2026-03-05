@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = "4.5.60"
+clap = { version = "4.5.60", features = ["derive"] }
 anyhow = { workspace = true }
 dotenvy = { workspace = true }
 tokio = { workspace = true }
 sea-orm = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 database = { path = "../../crates/database" }
