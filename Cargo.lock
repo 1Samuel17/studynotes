@@ -664,6 +664,7 @@ dependencies = [
  "log",
  "sea-orm 2.0.0-rc.35",
  "sea-orm-migration",
+ "tokio",
 ]
 
 [[package]]

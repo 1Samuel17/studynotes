@@ -18,6 +18,8 @@ pub enum Category {
 #[derive(EnumIter, DeriveActiveEnum, Clone, Debug, PartialEq, Eq)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::None)")]
 pub enum Tag {
+    #[sea_orm(string_value = "Important")]
+    Important,
     #[sea_orm(string_value = "Async")]
     Async,
     #[sea_orm(string_value = "Web Development")]
