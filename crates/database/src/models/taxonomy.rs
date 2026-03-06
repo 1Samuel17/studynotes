@@ -1,5 +1,7 @@
 use sea_orm::entity::prelude::*;
 
+// Taxonomy module defining categories and tags for notes
+
 #[derive(EnumIter, DeriveActiveEnum, Clone, Debug, PartialEq, Eq)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::None)")]
 pub enum Category {

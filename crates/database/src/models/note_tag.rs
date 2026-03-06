@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
 
+// NoteTag entity representing the many-to-many relationship between notes and tags
 #[sea_orm::model]
 #[derive(DeriveEntityModel, Clone, Debug, PartialEq, Eq)]
 #[sea_orm(table_name = "note_tag")]

@@ -1,11 +1,14 @@
 // Database connection handled by SeaORM
 
+use anyhow::{Context, Result};
 use sea_orm::{ConnectOptions, DatabaseConnection};
 use std::time::Duration;
-use anyhow::{Result, Context};
 
+// Set up database connection options
 pub async fn set_db_options() -> Result<ConnectOptions> {
-    let mut opt = ConnectOptions::new(dotenvy::var("DATABASE_URL").context("DATABASE_URL must be set in .env file")?);
+    let mut opt = ConnectOptions::new(
+        dotenvy::var("DATABASE_URL").context("DATABASE_URL must be set in .env file")?,
+    );
     opt.max_connections(100)
         .min_connections(5)
         .connect_timeout(Duration::from_secs(8))
@@ -19,6 +22,7 @@ pub async fn set_db_options() -> Result<ConnectOptions> {
     Ok(opt)
 }
 
+// Check database connection by pinging it
 pub async fn check_db(db: &DatabaseConnection) {
     assert!(db.ping().await.is_ok());
     // let _ = db.clone().close().await;

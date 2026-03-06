@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
 
+// Notebook entity representing a collection of notes
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "notebook")]
@@ -12,7 +13,6 @@ pub struct Model {
     pub collection: HasOne<super::collection::Entity>,
     #[sea_orm(has_many)]
     pub notes: HasMany<super::note::Entity>,
-
 }
 
 impl ActiveModelBehavior for ActiveModel {}

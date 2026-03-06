@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
 
+// Note entity representing an individual note
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "note")]
@@ -16,4 +17,3 @@ pub struct Model {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-

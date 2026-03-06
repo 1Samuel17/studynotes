@@ -1,6 +1,7 @@
-use sea_orm::entity::prelude::*;
 use crate::models::taxonomy::Tag;
+use sea_orm::entity::prelude::*;
 
+// Tag entity representing a tag that can be associated with notes
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "tag")]

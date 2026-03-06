@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
 
+// Collection entity representing a group of notebooks
 #[sea_orm::model]
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "collection")]

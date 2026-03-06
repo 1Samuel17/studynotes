@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "apps/studynotes",
     "crates/database",
+    "crates/notes",
 ]
 
 [workspace.dependencies]
