@@ -1,1 +1,0 @@
-// In an effort to get the project up and running quickly, I am skipping unit tests for now. These will be added back in the future as we build out the application and want to ensure individual components work correctly in isolation.
