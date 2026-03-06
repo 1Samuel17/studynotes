@@ -1,3 +1,4 @@
+pub mod taxonomy;
 pub mod collection;
 pub mod notebook;
 pub mod note;

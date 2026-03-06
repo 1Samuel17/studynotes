@@ -4,16 +4,16 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "note")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
+    #[sea_orm(unique, primary_key, auto_increment = false)]
     pub name: String,
-    pub description: String,
+    pub topic: String,
+    pub content: String,
+    pub notebook_name: String,
+    #[sea_orm(belongs_to, from = "notebook_name", to = "name")]
+    pub notebook: HasOne<super::notebook::Entity>,
     #[sea_orm(has_many, via = "note_tag")]
     pub tags: HasMany<super::tag::Entity>,
-    pub notebook_id: Option<i32>,
-    #[sea_orm(belongs_to, from = "notebook_id", to = "id")]
-    pub notebook: HasOne<super::notebook::Entity>,
-
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
