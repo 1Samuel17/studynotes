@@ -17,7 +17,6 @@ pub struct Model {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-
 // Unit test for the Notebook entity
 #[cfg(test)]
 mod tests {

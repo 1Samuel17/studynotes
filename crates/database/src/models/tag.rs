@@ -15,7 +15,6 @@ pub struct Model {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-
 // Unit test for the Tag model
 #[cfg(test)]
 mod tests {
@@ -59,7 +58,7 @@ mod tests {
             notebook_name: Set("Test Notebook".to_string()),
             ..Default::default()
         };
-         let _inserted_note = new_note.insert(&db).await.unwrap();
+        let _inserted_note = new_note.insert(&db).await.unwrap();
 
         // Create a new tag
         let new_tag = ActiveModel {

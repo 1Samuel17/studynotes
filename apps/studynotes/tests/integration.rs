@@ -1,9 +1,9 @@
 // Database integration tests for models and connection setup
 
 use database::{
-     connection::{check_db, set_db_options},
-     models::*,
- };
+    connection::{check_db, set_db_options},
+    models::*,
+};
 use sea_orm::{ActiveModelTrait, Database, EntityTrait, Set};
 
 // Test database connection and basic CRUD operations

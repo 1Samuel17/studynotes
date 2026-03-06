@@ -1,8 +1,6 @@
 // use clap::{Parser, Subcommand, Args};
-use database::{
-    connection::{check_db, set_db_options},
-};
-use sea_orm::{Database};
+use database::connection::{check_db, set_db_options};
+use sea_orm::Database;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
