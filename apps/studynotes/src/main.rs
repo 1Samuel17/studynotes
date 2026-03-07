@@ -1,7 +1,67 @@
-// use clap::{Parser, Subcommand, Args};
+use clap::{Args, Parser, Subcommand};
 use database::connection::{check_db, set_db_options};
 use sea_orm::Database;
 
+// Define command-line arguments using clap
+#[derive(Parser)]
+#[command(name = "StudyNotes", version = "1.0", author = "Samuel Diaz", about = "A study notes application")]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Manage collections of study notes
+    Collections(CollectionArgs),
+    /// Manage notebooks within collections
+    Notebooks(NotebookArgs),
+    /// Manage individual notes
+    Notes(NoteArgs),
+    /// Manage tags for notes
+    Tags(TagArgs),
+}
+
+#[derive(Args)]
+struct CollectionArgs {
+    /// Show a list of all collections
+    #[arg(long)]
+    all: bool,
+    /// Show the notebooks of a specific collection
+    #[arg(long)]
+    show: Option<String>,
+}
+
+#[derive(Args)]
+struct NotebookArgs {
+    /// Show a list of all notebooks
+    #[arg(long)]
+    all: bool,
+    /// Show a list of the notes of a specific notebook
+    #[arg(long)]
+    show: Option<String>,
+}
+
+#[derive(Args)]
+struct NoteArgs {
+    /// Show a list of all notes
+    #[arg(long)]
+    all: bool,
+    /// Show the content of a specific note
+    #[arg(long)]
+    show: Option<String>,
+}
+#[derive(Args)]
+struct TagArgs {
+    /// Show a list of all tags
+    #[arg(long)]
+    all: bool,
+    /// Show the notes associated with a specific tag
+    #[arg(long)]
+    show: Option<String>,
+}
+
+// Application entry point
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set up logging with tracing
@@ -21,6 +81,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     db.get_schema_registry("database::models::*")
         .sync(db)
         .await?;
+
+    // Parse command-line arguments
+    let cli = Cli::parse();
+    // Handle commands based on user input
+    match cli.command {
+        Commands::Collections(args) => {
+            if args.all {
+                println!("Listing all collections...");
+            }
+            if let Some(collection_name) = args.show {
+                println!("Showing notebooks of collection with name: {}", collection_name);
+            }
+        }
+        Commands::Notebooks(args) => {
+            if args.all {
+                println!("Listing all notebooks...");
+            }
+            if let Some(notebook_name) = args.show {
+                println!("Showing notes of notebook with name: {}", notebook_name);
+            }
+        }
+        Commands::Notes(args) => {
+            if args.all {
+                println!("Listing all notes...");
+            }
+            if let Some(note_name) = args.show {
+                println!("Showing content of note with name: {}", note_name);
+            }
+        }
+        Commands::Tags(args) => {
+            if args.all {
+                println!("Listing all tags...");
+            }
+            if let Some(tag_name) = args.show {
+                println!("Showing notes associated with tag name: {}", tag_name);
+            }
+        }
+    }
 
     Ok(())
 }
