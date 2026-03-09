@@ -2,6 +2,8 @@
 name = "studynotes"
 version = "0.1.0"
 edition = "2024"
+authors = ["Samuel Diaz",]
+description = "A personal project to document personal self study of Rust, Software Development, and Coursera courses."
 
 [dependencies]
 clap = { version = "4.5.60", features = ["derive"] }
@@ -12,3 +14,6 @@ sea-orm = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 database = { path = "../../crates/database" }
+
+[dev-dependencies]
+database = { path = "../../crates/database", features = ["test-utils"] }

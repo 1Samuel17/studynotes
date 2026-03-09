@@ -4,7 +4,7 @@ use sea_orm::Database;
 
 // Define command-line arguments using clap
 #[derive(Parser)]
-#[command(name = "StudyNotes", version = "1.0", author = "Samuel Diaz", about = "A study notes application")]
+#[command(version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -86,6 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
     // Handle commands based on user input
     match cli.command {
+        // Collections command
         Commands::Collections(args) => {
             if args.all {
                 println!("Listing all collections...");
@@ -94,6 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Showing notebooks of collection with name: {}", collection_name);
             }
         }
+        // Notebooks command
         Commands::Notebooks(args) => {
             if args.all {
                 println!("Listing all notebooks...");
@@ -102,6 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Showing notes of notebook with name: {}", notebook_name);
             }
         }
+        // Notes command
         Commands::Notes(args) => {
             if args.all {
                 println!("Listing all notes...");
@@ -110,6 +113,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Showing content of note with name: {}", note_name);
             }
         }
+        // Tags command
         Commands::Tags(args) => {
             if args.all {
                 println!("Listing all tags...");
