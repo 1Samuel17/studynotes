@@ -220,10 +220,7 @@ mod tests {
             panic!("expected Tags")
         };
         assert!(!tags.is_empty());
-        assert!(
-            tags.iter()
-                .any(|t| t.tag == data.tag.tag)
-        );
+        assert!(tags.iter().any(|t| t.tag == data.tag.tag));
 
         testutils::clear_test_data(&db).await.unwrap();
     }

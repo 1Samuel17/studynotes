@@ -1,8 +1,6 @@
-
-
 // insert sample data into the database
-use sea_orm::{ActiveModelTrait, ActiveEnum, EntityTrait, DatabaseConnection, Set};
-use crate::models::{collection, notebook, note, note_tag, tag, taxonomy};
+use crate::models::{collection, note, note_tag, notebook, tag, taxonomy};
+use sea_orm::{ActiveEnum, ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 
 pub async fn insert_sample_data(db: &DatabaseConnection) -> anyhow::Result<()> {
     let new_collection_1 = collection::ActiveModel {
