@@ -6,11 +6,8 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "tag")]
 pub struct Model {
-    #[sea_orm(unique, primary_key, auto_increment = false)]
+    #[sea_orm(primary_key, auto_increment = false)]
     pub tag: Tag,
-    pub note_name: String,
-    #[sea_orm(has_many, via = "note_tag")]
-    pub note: HasMany<super::note::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
@@ -63,11 +60,17 @@ mod tests {
         // Create a new tag
         let new_tag = ActiveModel {
             tag: Set(taxonomy::Tag::Important),
-            note_name: Set("Test Note".to_string()),
             ..Default::default()
         };
         let inserted_tag = new_tag.insert(&db).await.unwrap();
         assert_eq!(inserted_tag.tag, taxonomy::Tag::Important);
-        assert_eq!(inserted_tag.note_name, "Test Note");
+
+        // Associate the tag with the note via note_tag
+        let note_tag = super::super::note_tag::ActiveModel {
+            note_name: Set("Test Note".to_string()),
+            tag_name: Set(taxonomy::Tag::Important.to_value()),
+            ..Default::default()
+        };
+        note_tag.insert(&db).await.unwrap();
     }
 }

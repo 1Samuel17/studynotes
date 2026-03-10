@@ -1,5 +1,8 @@
 use clap::{Args, Parser, Subcommand};
 use database::connection::{check_db, set_db_options};
+use database::crud::get::{
+    EntityKind, GetAllQueryResult, GetByNameQueryResult, get_all, get_by_name,
+};
 use sea_orm::Database;
 
 // Define command-line arguments using clap
@@ -82,6 +85,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .sync(db)
         .await?;
 
+    // Insert sample data into the database for testing purposes
+    // database::sampledata::insert_sample_data(db).await?;
+
+    // Delete sample data from the database after testing
+    // database::sampledata::remove_sample_data(db).await?;
+
     // Parse command-line arguments
     let cli = Cli::parse();
     // Handle commands based on user input
@@ -89,37 +98,115 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Collections command
         Commands::Collections(args) => {
             if args.all {
-                println!("Listing all collections...");
+                let result: GetAllQueryResult = get_all(db, EntityKind::Collection).await?;
+                if let GetAllQueryResult::Collections(collections) = result {
+                    println!("Collections:");
+                    for collection in collections {
+                        println!("- {:#?}", collection);
+                    }
+                } else {
+                    println!("No collections found.");
+                }
             }
             if let Some(collection_name) = args.show {
-                println!("Showing notebooks of collection with name: {}", collection_name);
+                let result = get_by_name(db, EntityKind::Collection, &collection_name).await?;
+                if let Some(collection) = result {
+                    println!("Collection: {:#?}", collection);
+                } else {
+                    println!("Collection not found.");
+                }
             }
         }
         // Notebooks command
         Commands::Notebooks(args) => {
             if args.all {
-                println!("Listing all notebooks...");
+                let result: GetAllQueryResult = get_all(db, EntityKind::Notebook).await?;
+                if let GetAllQueryResult::Notebooks(notebooks) = result {
+                    println!("Notebooks:");
+                    for notebook in notebooks {
+                        println!("- {:#?}", notebook);
+                    }
+                } else {
+                    println!("No notebooks found.");
+                }
             }
             if let Some(notebook_name) = args.show {
-                println!("Showing notes of notebook with name: {}", notebook_name);
+                let result = get_by_name(db, EntityKind::Notebook, &notebook_name).await?;
+                match result {
+                    Some(GetByNameQueryResult::Notebook(notebook)) => {
+                        println!("Notebook: {}", notebook.name);
+                        println!("  Description: {}", notebook.description);
+                        println!("  Collection: {}", notebook.collection_name);
+                        if notebook.notes.is_empty() {
+                            println!("  Notes: (none)");
+                        } else {
+                            println!("  Notes:");
+                            for note in &notebook.notes {
+                                println!("    - {} [{}]", note.name, note.topic);
+                            }
+                        }
+                    }
+                    _ => println!("Notebook not found."),
+                }
             }
         }
         // Notes command
         Commands::Notes(args) => {
             if args.all {
-                println!("Listing all notes...");
+                let result: GetAllQueryResult = get_all(db, EntityKind::Note).await?;
+                if let GetAllQueryResult::Notes(notes) = result {
+                    println!("Notes:");
+                    for note in notes {
+                        println!(
+                            "- {} | Topic: {} | Notebook: {}",
+                            note.name, note.topic, note.notebook_name
+                        );
+                    }
+                } else {
+                    println!("No notes found.");
+                }
             }
             if let Some(note_name) = args.show {
-                println!("Showing content of note with name: {}", note_name);
+                let result = get_by_name(db, EntityKind::Note, &note_name).await?;
+                match result {
+                    Some(GetByNameQueryResult::Note(note)) => {
+                        println!("Note: {}", note.name);
+                        println!("  Topic: {}", note.topic);
+                        println!("  Notebook: {}", note.notebook_name);
+                        println!("  Collection: {}", note.collection_name);
+                        let tag_strs: Vec<String> =
+                            note.tags.iter().map(|t| format!("{:?}", t)).collect();
+                        if tag_strs.is_empty() {
+                            println!("  Tags: (none)");
+                        } else {
+                            println!("  Tags: {}", tag_strs.join(", "));
+                        }
+                        println!("  Content:\n{}", note.content);
+                    }
+                    _ => println!("Note not found."),
+                }
             }
         }
         // Tags command
         Commands::Tags(args) => {
             if args.all {
-                println!("Listing all tags...");
+                let result: GetAllQueryResult = get_all(db, EntityKind::Tag).await?;
+                if let GetAllQueryResult::Tags(tags) = result {
+                    println!("Tags:");
+                    for tag in tags {
+                        println!("- {:#?}", tag);
+                    }
+                } else {
+                    println!("No tags found.");
+                }
             }
             if let Some(tag_name) = args.show {
-                println!("Showing notes associated with tag name: {}", tag_name);
+                let result = get_by_name(db, EntityKind::Tag, &tag_name).await?;
+                if let Some(tag) = result {
+                    println!("Tag: {:#?}", tag);
+                } else {
+                    println!("Tag not found.");
+                }
             }
         }
     }
