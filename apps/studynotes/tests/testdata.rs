@@ -1,5 +1,8 @@
 use anyhow::Result;
-use database::{connection::{check_db, set_db_options}, testutils};
+use database::{
+    connection::{check_db, set_db_options},
+    testutils,
+};
 use sea_orm::{Database, DatabaseConnection};
 
 pub use testutils::TestData;

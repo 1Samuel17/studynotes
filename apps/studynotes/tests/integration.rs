@@ -7,6 +7,9 @@ mod testdata;
 async fn test_database_integration() -> Result<(), Box<dyn std::error::Error>> {
     let db = testdata::setup_test_db().await?;
 
+    // Clear any leftover data from previous runs
+    testdata::clear_test_data(&db).await?;
+
     let data = testdata::insert_test_data(&db).await?;
     tracing::info!("Inserted collection: {:?}", data.collection);
     tracing::info!("Inserted notebook: {:?}", data.notebook);

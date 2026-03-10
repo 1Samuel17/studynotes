@@ -1,6 +1,6 @@
 use crate::models::*;
 use anyhow::Result;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{ActiveEnum, ActiveModelTrait, Database, DatabaseConnection, EntityTrait, Set};
 
 /// Holds the inserted test data models for use in assertions.
 pub struct TestData {
@@ -47,10 +47,17 @@ pub async fn insert_test_data(db: &DatabaseConnection) -> Result<TestData> {
 
     let new_tag = tag::ActiveModel {
         tag: Set(taxonomy::Tag::Important),
-        note_name: Set(inserted_note.name.clone()),
         ..Default::default()
     };
     let inserted_tag = new_tag.insert(db).await?;
+
+    // Create the note_tag association
+    let new_note_tag = note_tag::ActiveModel {
+        note_name: Set(inserted_note.name.clone()),
+        tag_name: Set(taxonomy::Tag::Important.to_value()),
+        ..Default::default()
+    };
+    new_note_tag.insert(db).await?;
 
     Ok(TestData {
         collection: inserted_collection,
@@ -62,6 +69,7 @@ pub async fn insert_test_data(db: &DatabaseConnection) -> Result<TestData> {
 
 /// Clear all test data from the database.
 pub async fn clear_test_data(db: &DatabaseConnection) -> Result<()> {
+    note_tag::Entity::delete_many().exec(db).await?;
     tag::Entity::delete_many().exec(db).await?;
     note::Entity::delete_many().exec(db).await?;
     notebook::Entity::delete_many().exec(db).await?;
