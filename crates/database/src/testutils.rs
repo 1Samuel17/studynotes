@@ -40,7 +40,7 @@ pub async fn insert_test_data(db: &DatabaseConnection) -> Result<TestData> {
         notebook_name: Set(inserted_notebook.name.clone()),
         name: Set("My First Note".to_string()),
         topic: Set("General".to_string()),
-        content: Set("This is the content of my first note.".to_string()),
+        content: Set(serde_json::json!({"text": "This is the content of my first note."})),
         ..Default::default()
     };
     let inserted_note = new_note.insert(db).await?;

@@ -22,7 +22,7 @@ pub struct NoteSummary {
 pub struct NoteDetail {
     pub name: String,
     pub topic: String,
-    pub content: String,
+    pub content: serde_json::Value,
     pub notebook_name: String,
     pub collection_name: String,
     pub tags: Vec<taxonomy::Tag>,

@@ -4,6 +4,7 @@ use database::crud::get::{
     EntityKind, GetAllQueryResult, GetByNameQueryResult, get_all, get_by_name,
 };
 use sea_orm::Database;
+use tracing_subscriber::EnvFilter;
 
 // Define command-line arguments using clap
 #[derive(Parser)]
@@ -69,9 +70,11 @@ struct TagArgs {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set up logging with tracing
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_test_writer()
-        .init();
+    .with_env_filter(
+        EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| EnvFilter::new("off"))
+    )
+    .init();
 
     // Set up the database connection
     let db_options = set_db_options().await.unwrap();
@@ -89,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // database::sampledata::insert_sample_data(db).await?;
 
     // Delete sample data from the database after testing
-    // database::sampledata::remove_sample_data(db).await?;
+    database::sampledata::remove_sample_data(db).await?;
 
     // Parse command-line arguments
     let cli = Cli::parse();
@@ -181,7 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         } else {
                             println!("  Tags: {}", tag_strs.join(", "));
                         }
-                        println!("  Content:\n{}", note.content);
+                        println!("  Content:\n{}", serde_json::to_string_pretty(&note.content).unwrap_or_else(|_| note.content.to_string()));
                     }
                     _ => println!("Note not found."),
                 }

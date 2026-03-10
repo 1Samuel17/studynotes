@@ -1,4 +1,5 @@
 use sea_orm::entity::prelude::*;
+use serde_json::Value as Json;
 
 // Note entity representing an individual note
 #[sea_orm::model]
@@ -8,7 +9,7 @@ pub struct Model {
     #[sea_orm(unique, primary_key, auto_increment = false)]
     pub name: String,
     pub topic: String,
-    pub content: String,
+    pub content: Json,
     pub notebook_name: String,
     #[sea_orm(belongs_to, from = "notebook_name", to = "name")]
     pub notebook: HasOne<super::notebook::Entity>,
@@ -55,7 +56,7 @@ mod tests {
         let new_note = ActiveModel {
             name: Set("Test Note".to_string()),
             topic: Set("Testing".to_string()),
-            content: Set("This is a test note".to_string()),
+            content: Set(serde_json::json!({"text": "This is a test note"})),
             notebook_name: Set(inserted_notebook.name.clone()),
             ..Default::default()
         };
@@ -64,7 +65,7 @@ mod tests {
         let inserted_note = new_note.insert(&db).await.unwrap();
         assert_eq!(inserted_note.name, "Test Note");
         assert_eq!(inserted_note.topic, "Testing");
-        assert_eq!(inserted_note.content, "This is a test note");
+        assert_eq!(inserted_note.content, serde_json::json!({"text": "This is a test note"}));
         assert_eq!(inserted_note.notebook_name, inserted_notebook.name);
     }
 }

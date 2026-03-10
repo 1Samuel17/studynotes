@@ -51,7 +51,7 @@ mod tests {
         let new_note = super::super::note::ActiveModel {
             name: Set("Test Note".to_string()),
             topic: Set("Testing".to_string()),
-            content: Set("This is a test note".to_string()),
+            content: Set(serde_json::json!({"text": "This is a test note"})),
             notebook_name: Set("Test Notebook".to_string()),
             ..Default::default()
         };

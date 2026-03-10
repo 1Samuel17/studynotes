@@ -54,7 +54,7 @@ pub async fn insert_sample_data(db: &DatabaseConnection) -> anyhow::Result<()> {
         notebook_name: Set("My Notebook 1".to_string()),
         name: Set("My First Note 1".to_string()),
         topic: Set("General".to_string()),
-        content: Set("This is the content of my first note 1.".to_string()),
+        content: Set(serde_json::json!({"text": "This is the content of my first note 1."})),
         ..Default::default()
     };
 
@@ -62,7 +62,7 @@ pub async fn insert_sample_data(db: &DatabaseConnection) -> anyhow::Result<()> {
         notebook_name: Set("My Notebook 2".to_string()),
         name: Set("My First Note 2".to_string()),
         topic: Set("General".to_string()),
-        content: Set("This is the content of my first note 2.".to_string()),
+        content: Set(serde_json::json!({"text": "This is the content of my first note 2."})),
         ..Default::default()
     };
 
@@ -70,7 +70,7 @@ pub async fn insert_sample_data(db: &DatabaseConnection) -> anyhow::Result<()> {
         notebook_name: Set("My Notebook 3".to_string()),
         name: Set("My First Note 3".to_string()),
         topic: Set("General".to_string()),
-        content: Set("This is the content of my first note 3.".to_string()),
+        content: Set(serde_json::json!({"text": "This is the content of my first note 3."})),
         ..Default::default()
     };
 

@@ -664,6 +664,7 @@ dependencies = [
  "log",
  "sea-orm 2.0.0-rc.35",
  "sea-orm-migration",
+ "serde_json",
  "tokio",
 ]
 
@@ -2593,6 +2594,7 @@ dependencies = [
  "database",
  "dotenvy",
  "sea-orm 2.0.0-rc.35",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
