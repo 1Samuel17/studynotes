@@ -236,9 +236,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if let GetAllQueryResult::Notebooks(notebooks) = result {
                     println!("\nNotebooks:\n");
                     for notebook in notebooks {
+                        let overview = notebook
+                            .description
+                            .get("text")
+                            .and_then(|t| t.as_str())
+                            .and_then(|s| {
+                                // Try JSON parse first, fall back to string extraction
+                                serde_json::from_str::<serde_json::Value>(s)
+                                    .ok()
+                                    .and_then(|parsed| {
+                                        parsed
+                                            .get("Overview")
+                                            .and_then(|v| v.as_str().map(String::from))
+                                    })
+                                    .or_else(|| {
+                                        // Fallback: extract Overview value via string search
+                                        let marker = "\"Overview\": \"";
+                                        let start = s.find(marker)? + marker.len();
+                                        let rest = &s[start..];
+                                        let end = rest.find("\",")?;
+                                        Some(rest[..end].to_string())
+                                    })
+                            })
+                            .unwrap_or_default();
                         println!(
-                            "- {} | Description: {} | Collection: {}",
-                            notebook.name, notebook.description, notebook.collection_name
+                            "- {} | Overview: {} | Collection: {}",
+                            notebook.name, overview, notebook.collection_name
                         );
                     }
                 } else {
