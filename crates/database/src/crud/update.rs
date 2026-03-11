@@ -1,6 +1,7 @@
 use crate::models::{collection, note, note_tag, notebook, tag};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set,
+    sea_query::Expr, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
+    QueryFilter, Set,
 };
 
 /// Data describing which fields to update on an entity.
@@ -44,15 +45,25 @@ pub async fn update_one(
                 .one(db)
                 .await?;
             match row {
-                Some(model) => {
-                    let mut active: collection::ActiveModel = model.into();
+                Some(_) => {
+                    let new_name = match &name {
+                        Some(n) => n.clone(),
+                        None => current_name.to_string(),
+                    };
+                    let mut stmt = collection::Entity::update_many()
+                        .filter(collection::Column::Name.eq(current_name));
                     if let Some(n) = name {
-                        active.name = Set(n);
+                        stmt = stmt.col_expr(collection::Column::Name, Expr::value(n));
                     }
                     if let Some(d) = description {
-                        active.description = Set(d);
+                        stmt = stmt.col_expr(collection::Column::Description, Expr::value(d));
                     }
-                    let result = active.update(db).await?;
+                    stmt.exec(db).await?;
+                    let result = collection::Entity::find()
+                        .filter(collection::Column::Name.eq(new_name))
+                        .one(db)
+                        .await?
+                        .unwrap();
                     Ok(Some(UpdateResult::Collection(result)))
                 }
                 None => Ok(None),
@@ -68,18 +79,28 @@ pub async fn update_one(
                 .one(db)
                 .await?;
             match row {
-                Some(model) => {
-                    let mut active: notebook::ActiveModel = model.into();
+                Some(_) => {
+                    let new_name = match &name {
+                        Some(n) => n.clone(),
+                        None => current_name.to_string(),
+                    };
+                    let mut stmt = notebook::Entity::update_many()
+                        .filter(notebook::Column::Name.eq(current_name));
                     if let Some(n) = name {
-                        active.name = Set(n);
+                        stmt = stmt.col_expr(notebook::Column::Name, Expr::value(n));
                     }
                     if let Some(d) = description {
-                        active.description = Set(d);
+                        stmt = stmt.col_expr(notebook::Column::Description, Expr::value(d));
                     }
                     if let Some(c) = collection_name {
-                        active.collection_name = Set(c);
+                        stmt = stmt.col_expr(notebook::Column::CollectionName, Expr::value(c));
                     }
-                    let result = active.update(db).await?;
+                    stmt.exec(db).await?;
+                    let result = notebook::Entity::find()
+                        .filter(notebook::Column::Name.eq(new_name))
+                        .one(db)
+                        .await?
+                        .unwrap();
                     Ok(Some(UpdateResult::Notebook(result)))
                 }
                 None => Ok(None),
@@ -96,19 +117,25 @@ pub async fn update_one(
                 .one(db)
                 .await?;
             match row {
-                Some(model) => {
+                Some(_) => {
                     let note_name = name.as_deref().unwrap_or(current_name).to_string();
-                    let mut active: note::ActiveModel = model.into();
+                    let mut stmt = note::Entity::update_many()
+                        .filter(note::Column::Name.eq(current_name));
                     if let Some(n) = name {
-                        active.name = Set(n);
+                        stmt = stmt.col_expr(note::Column::Name, Expr::value(n));
                     }
                     if let Some(t) = topic {
-                        active.topic = Set(t);
+                        stmt = stmt.col_expr(note::Column::Topic, Expr::value(t));
                     }
                     if let Some(c) = content {
-                        active.content = Set(c);
+                        stmt = stmt.col_expr(note::Column::Content, Expr::value(c));
                     }
-                    let result = active.update(db).await?;
+                    stmt.exec(db).await?;
+                    let result = note::Entity::find()
+                        .filter(note::Column::Name.eq(&note_name))
+                        .one(db)
+                        .await?
+                        .unwrap();
 
                     // Sync tags via note_tag join table
                     if let Some(tag_values) = tags {
