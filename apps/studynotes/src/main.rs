@@ -70,11 +70,10 @@ struct TagArgs {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set up logging with tracing
     tracing_subscriber::fmt()
-    .with_env_filter(
-        EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new("off"))
-    )
-    .init();
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("off")),
+        )
+        .init();
 
     // Set up the database connection
     let db_options = set_db_options().await.unwrap();
@@ -92,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // database::sampledata::insert_sample_data(db).await?;
 
     // Delete sample data from the database after testing
-    database::sampledata::remove_sample_data(db).await?;
+    // database::sampledata::remove_sample_data(db).await?;
 
     // Parse command-line arguments
     let cli = Cli::parse();
@@ -100,52 +99,86 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         // Collections command
         Commands::Collections(args) => {
+            // If --all flag is set, retrieve and display all collections
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Collection).await?;
                 if let GetAllQueryResult::Collections(collections) = result {
-                    println!("Collections:");
+                    println!("\nCollections:\n");
                     for collection in collections {
-                        println!("- {:#?}", collection);
+                        println!(
+                            "- {} | Description: {}",
+                            collection.name, collection.description
+                        );
                     }
                 } else {
                     println!("No collections found.");
                 }
             }
+            // If --show flag is set with a collection name, retrieve and display that collection's details
             if let Some(collection_name) = args.show {
                 let result = get_by_name(db, EntityKind::Collection, &collection_name).await?;
-                if let Some(collection) = result {
-                    println!("Collection: {:#?}", collection);
-                } else {
-                    println!("Collection not found.");
+                match result {
+                    Some(GetByNameQueryResult::Collection(collection)) => {
+                        println!("\nCollection: {}", collection.name);
+                        println!(
+                            "  Description:\n{}",
+                            serde_json::to_string_pretty(&collection.description)
+                                .unwrap_or_else(|_| collection.description.to_string())
+                        );
+                        if collection.notebooks.is_empty() {
+                            println!("  Notebooks: (none)");
+                        } else {
+                            println!("  Notebooks:");
+                            for notebook in &collection.notebooks {
+                                println!(
+                                    "    - {} | Description: {} | Collection: {}",
+                                    notebook.name, notebook.description, notebook.collection_name
+                                );
+                            }
+                        }
+                    }
+                    _ => println!("Collection not found."),
                 }
             }
         }
         // Notebooks command
         Commands::Notebooks(args) => {
+            // If --all flag is set, retrieve and display all notebooks
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Notebook).await?;
                 if let GetAllQueryResult::Notebooks(notebooks) = result {
-                    println!("Notebooks:");
+                    println!("\nNotebooks:\n");
                     for notebook in notebooks {
-                        println!("- {:#?}", notebook);
+                        println!(
+                            "- {} | Description: {} | Collection: {}",
+                            notebook.name, notebook.description, notebook.collection_name
+                        );
                     }
                 } else {
                     println!("No notebooks found.");
                 }
             }
+            // If --show flag is set with a notebook name, retrieve and display that notebook's details
             if let Some(notebook_name) = args.show {
                 let result = get_by_name(db, EntityKind::Notebook, &notebook_name).await?;
                 match result {
                     Some(GetByNameQueryResult::Notebook(notebook)) => {
-                        println!("Notebook: {}", notebook.name);
-                        println!("  Description: {}", notebook.description);
+                        println!("\nNotebook: {}", notebook.name);
                         println!("  Collection: {}", notebook.collection_name);
+                        println!(
+                            "  Description:\n{}",
+                            serde_json::to_string_pretty(&notebook.description)
+                                .unwrap_or_else(|_| notebook.description.to_string())
+                        );
                         if notebook.notes.is_empty() {
                             println!("  Notes: (none)");
                         } else {
                             println!("  Notes:");
                             for note in &notebook.notes {
-                                println!("    - {} [{}]", note.name, note.topic);
+                                println!(
+                                    "    - {} | Topic: {} | Notebook: {}",
+                                    note.name, note.topic, note.notebook_name
+                                );
                             }
                         }
                     }
@@ -155,10 +188,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         // Notes command
         Commands::Notes(args) => {
+            // If --all flag is set, retrieve and display all notes
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Note).await?;
                 if let GetAllQueryResult::Notes(notes) = result {
-                    println!("Notes:");
+                    println!("\nNotes:\n");
                     for note in notes {
                         println!(
                             "- {} | Topic: {} | Notebook: {}",
@@ -169,11 +203,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("No notes found.");
                 }
             }
+            // If --show flag is set with a note name, retrieve and display that note's details
             if let Some(note_name) = args.show {
                 let result = get_by_name(db, EntityKind::Note, &note_name).await?;
                 match result {
                     Some(GetByNameQueryResult::Note(note)) => {
-                        println!("Note: {}", note.name);
+                        println!("\nNote: {}", note.name);
                         println!("  Topic: {}", note.topic);
                         println!("  Notebook: {}", note.notebook_name);
                         println!("  Collection: {}", note.collection_name);
@@ -184,7 +219,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         } else {
                             println!("  Tags: {}", tag_strs.join(", "));
                         }
-                        println!("  Content:\n{}", serde_json::to_string_pretty(&note.content).unwrap_or_else(|_| note.content.to_string()));
+                        println!(
+                            "  Content:\n{}",
+                            serde_json::to_string_pretty(&note.content)
+                                .unwrap_or_else(|_| note.content.to_string())
+                        );
                     }
                     _ => println!("Note not found."),
                 }
@@ -192,23 +231,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         // Tags command
         Commands::Tags(args) => {
+            // If --all flag is set, retrieve and display all tags
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Tag).await?;
                 if let GetAllQueryResult::Tags(tags) = result {
-                    println!("Tags:");
+                    println!("\nTags:\n");
                     for tag in tags {
-                        println!("- {:#?}", tag);
+                        println!("- {:?}", tag.tag);
                     }
                 } else {
                     println!("No tags found.");
                 }
             }
+            // If --show flag is set with a tag name, retrieve and display that tag's details
             if let Some(tag_name) = args.show {
                 let result = get_by_name(db, EntityKind::Tag, &tag_name).await?;
-                if let Some(tag) = result {
-                    println!("Tag: {:#?}", tag);
-                } else {
-                    println!("Tag not found.");
+                match result {
+                    Some(GetByNameQueryResult::Tag(tag)) => {
+                        println!("\nTag: {:?}", tag.tag);
+                    }
+                    _ => println!("Tag not found."),
                 }
             }
         }

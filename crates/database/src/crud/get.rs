@@ -17,6 +17,14 @@ pub struct NoteSummary {
     pub notebook_name: String,
 }
 
+/// Summary view of a notebook (for listing).
+#[derive(Debug)]
+pub struct NotebookSummary {
+    pub name: String,
+    pub description: serde_json::Value,
+    pub collection_name: String,
+}
+
 /// Detailed view of a note (for show).
 #[derive(Debug)]
 pub struct NoteDetail {
@@ -32,16 +40,24 @@ pub struct NoteDetail {
 #[derive(Debug)]
 pub struct NotebookDetail {
     pub name: String,
-    pub description: String,
+    pub description: serde_json::Value,
     pub collection_name: String,
     pub notes: Vec<NoteSummary>,
+}
+
+/// Detailed view of a collection (for show), including its notebooks.
+#[derive(Debug)]
+pub struct CollectionDetail {
+    pub name: String,
+    pub description: serde_json::Value,
+    pub notebooks: Vec<NotebookSummary>,
 }
 
 /// Holds the result of a `get_all` query, typed by entity.
 #[derive(Debug)]
 pub enum GetAllQueryResult {
-    Collections(Vec<collection::Model>),
-    Notebooks(Vec<notebook::Model>),
+    Collections(Vec<CollectionDetail>),
+    Notebooks(Vec<NotebookSummary>),
     Notes(Vec<NoteSummary>),
     Tags(Vec<tag::Model>),
 }
@@ -49,7 +65,7 @@ pub enum GetAllQueryResult {
 /// Holds the result of a `get_by_name` query, typed by entity.
 #[derive(Debug)]
 pub enum GetByNameQueryResult {
-    Collection(collection::Model),
+    Collection(CollectionDetail),
     Notebook(NotebookDetail),
     Note(NoteDetail),
     Tag(tag::Model),
@@ -63,11 +79,27 @@ pub async fn get_all(
     match kind {
         EntityKind::Collection => {
             let rows = collection::Entity::find().all(db).await?;
-            Ok(GetAllQueryResult::Collections(rows))
+            let summaries = rows
+                .into_iter()
+                .map(|c| CollectionDetail {
+                    name: c.name,
+                    description: c.description,
+                    notebooks: Vec::new(), // This will be populated later if needed
+                })
+                .collect();
+            Ok(GetAllQueryResult::Collections(summaries))
         }
         EntityKind::Notebook => {
             let rows = notebook::Entity::find().all(db).await?;
-            Ok(GetAllQueryResult::Notebooks(rows))
+            let summaries = rows
+                .into_iter()
+                .map(|nb| NotebookSummary {
+                    name: nb.name,
+                    description: nb.description,
+                    collection_name: nb.collection_name,
+                })
+                .collect();
+            Ok(GetAllQueryResult::Notebooks(summaries))
         }
         EntityKind::Note => {
             let rows = note::Entity::find().all(db).await?;
@@ -100,7 +132,13 @@ pub async fn get_by_name(
                 .filter(collection::Column::Name.eq(name))
                 .one(db)
                 .await?;
-            Ok(row.map(GetByNameQueryResult::Collection))
+            Ok(row.map(|c| {
+                GetByNameQueryResult::Collection(CollectionDetail {
+                    name: c.name,
+                    description: c.description,
+                    notebooks: Vec::new(), // This will be populated later if needed
+                })
+            }))
         }
         EntityKind::Notebook => {
             let row = notebook::Entity::find()

@@ -7,7 +7,7 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(unique, primary_key, auto_increment = false)]
     pub name: String,
-    pub description: String,
+    pub description: Json,
     pub collection_name: String,
     #[sea_orm(belongs_to, from = "collection_name", to = "name")]
     pub collection: HasOne<super::collection::Entity>,
@@ -36,7 +36,7 @@ mod tests {
         // Create a collection to associate with the notebook
         let new_collection = super::super::collection::ActiveModel {
             name: Set("Test Collection".to_string()),
-            description: Set("A collection for testing".to_string()),
+            description: Set(serde_json::json!({"text": "A collection for testing"})),
             ..Default::default()
         };
         let inserted_collection = new_collection.insert(&db).await.unwrap();
@@ -44,7 +44,7 @@ mod tests {
         // Create a new notebook associated with the collection
         let new_notebook = ActiveModel {
             name: Set("Test Notebook".to_string()),
-            description: Set("A notebook for testing".to_string()),
+            description: Set(serde_json::json!({"text": "A notebook for testing"})),
             collection_name: Set(inserted_collection.name),
             ..Default::default()
         };
@@ -52,7 +52,10 @@ mod tests {
         // Insert the notebook into the database and verify it was created correctly
         let inserted_notebook = new_notebook.insert(&db).await.unwrap();
         assert_eq!(inserted_notebook.name, "Test Notebook");
-        assert_eq!(inserted_notebook.description, "A notebook for testing");
+        assert_eq!(
+            inserted_notebook.description,
+            serde_json::json!({"text": "A notebook for testing"})
+        );
         assert_eq!(inserted_notebook.collection_name, "Test Collection");
     }
 }

@@ -5,19 +5,19 @@ use sea_orm::{ActiveEnum, ActiveModelTrait, DatabaseConnection, EntityTrait, Set
 pub async fn insert_sample_data(db: &DatabaseConnection) -> anyhow::Result<()> {
     let new_collection_1 = collection::ActiveModel {
         name: Set("My Collection 1".to_string()),
-        description: Set("A collection of study notes 1".to_string()),
+        description: Set(serde_json::json!({"text": "A collection of study notes 1"})),
         ..Default::default()
     };
 
     let new_collection_2 = collection::ActiveModel {
         name: Set("My Collection 2".to_string()),
-        description: Set("A collection of study notes 2".to_string()),
+        description: Set(serde_json::json!({"text": "A collection of study notes 2"})),
         ..Default::default()
     };
 
     let new_collection_3 = collection::ActiveModel {
         name: Set("My Collection 3".to_string()),
-        description: Set("A collection of study notes 3".to_string()),
+        description: Set(serde_json::json!({"text": "A collection of study notes 3"})),
         ..Default::default()
     };
 
@@ -28,21 +28,21 @@ pub async fn insert_sample_data(db: &DatabaseConnection) -> anyhow::Result<()> {
     let new_notebook_1 = notebook::ActiveModel {
         collection_name: Set("My Collection 1".to_string()),
         name: Set("My Notebook 1".to_string()),
-        description: Set("A notebook for my study notes 1".to_string()),
+        description: Set(serde_json::json!({"text": "A notebook for my study notes 1"})),
         ..Default::default()
     };
 
     let new_notebook_2 = notebook::ActiveModel {
         collection_name: Set("My Collection 2".to_string()),
         name: Set("My Notebook 2".to_string()),
-        description: Set("A notebook for my study notes 2".to_string()),
+        description: Set(serde_json::json!({"text": "A notebook for my study notes 2"})),
         ..Default::default()
     };
 
     let new_notebook_3 = notebook::ActiveModel {
         collection_name: Set("My Collection 3".to_string()),
         name: Set("My Notebook 3".to_string()),
-        description: Set("A notebook for my study notes 3".to_string()),
+        description: Set(serde_json::json!({"text": "A notebook for my study notes 3"})),
         ..Default::default()
     };
 

@@ -7,7 +7,7 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(unique, primary_key, auto_increment = false)]
     pub name: String,
-    pub description: String,
+    pub description: Json,
     #[sea_orm(has_many)]
     pub notebooks: HasMany<super::notebook::Entity>,
 }
@@ -33,13 +33,16 @@ mod tests {
         // Create a new collection
         let new_collection = ActiveModel {
             name: Set("Test Collection".to_string()),
-            description: Set("A collection for testing".to_string()),
+            description: Set(serde_json::json!({"text": "A collection for testing"})),
             ..Default::default()
         };
 
         // Insert the collection into the database and verify it was created correctly
         let inserted_collection = new_collection.insert(&db).await.unwrap();
         assert_eq!(inserted_collection.name, "Test Collection");
-        assert_eq!(inserted_collection.description, "A collection for testing");
+        assert_eq!(
+            inserted_collection.description,
+            serde_json::json!({"text": "A collection for testing"})
+        );
     }
 }

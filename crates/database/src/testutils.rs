@@ -23,7 +23,7 @@ pub async fn setup_test_db() -> Result<DatabaseConnection> {
 pub async fn insert_test_data(db: &DatabaseConnection) -> Result<TestData> {
     let new_collection = collection::ActiveModel {
         name: Set("My Collection".to_string()),
-        description: Set("A collection of study notes".to_string()),
+        description: Set(serde_json::json!({"text": "A collection of study notes"})),
         ..Default::default()
     };
     let inserted_collection = new_collection.insert(db).await?;
@@ -31,7 +31,7 @@ pub async fn insert_test_data(db: &DatabaseConnection) -> Result<TestData> {
     let new_notebook = notebook::ActiveModel {
         collection_name: Set(inserted_collection.name.clone()),
         name: Set("My Notebook".to_string()),
-        description: Set("A notebook for my study notes".to_string()),
+        description: Set(serde_json::json!({"text": "A notebook for my study notes"})),
         ..Default::default()
     };
     let inserted_notebook = new_notebook.insert(db).await?;
