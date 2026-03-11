@@ -3,4 +3,5 @@ target
 projectnotes.txt
 studynotes.code-workspace
 .vscode/
+.DS_Store
 DS_Store
