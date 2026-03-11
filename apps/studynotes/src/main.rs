@@ -153,7 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // database::sampledata::insert_sample_data(db).await?;
 
     // Delete sample data from the database after testing
-    database::sampledata::remove_sample_data(db).await?;
+    // database::sampledata::remove_sample_data(db).await?;
 
     // Parse command-line arguments
     let cli = Cli::parse();
