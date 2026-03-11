@@ -1,13 +1,7 @@
+use crate::crud::EntityKind;
 use crate::models::{collection, note, note_tag, notebook, tag, taxonomy};
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, ModelTrait, QueryFilter};
 
-/// Describes which entity to retrieve from the database.
-pub enum EntityKind {
-    Collection,
-    Notebook,
-    Note,
-    Tag,
-}
 
 /// Summary view of a note (for listing).
 #[derive(Debug)]
@@ -121,7 +115,7 @@ pub async fn get_all(
 }
 
 /// Retrieve a single record by its entity kind and name.
-pub async fn get_by_name(
+pub async fn get_one(
     db: &DatabaseConnection,
     kind: EntityKind,
     name: &str,
@@ -269,7 +263,7 @@ mod tests {
         let data = testutils::insert_test_data(&db).await.unwrap();
 
         // Collection
-        let result = get_by_name(&db, EntityKind::Collection, &data.collection.name)
+        let result = get_one(&db, EntityKind::Collection, &data.collection.name)
             .await
             .unwrap();
         let Some(GetByNameQueryResult::Collection(collection)) = result else {
@@ -278,7 +272,7 @@ mod tests {
         assert_eq!(collection.name, data.collection.name);
 
         // Notebook (now returns NotebookDetail with notes)
-        let result = get_by_name(&db, EntityKind::Notebook, &data.notebook.name)
+        let result = get_one(&db, EntityKind::Notebook, &data.notebook.name)
             .await
             .unwrap();
         let Some(GetByNameQueryResult::Notebook(notebook)) = result else {
@@ -289,7 +283,7 @@ mod tests {
         assert!(notebook.notes.iter().any(|n| n.name == data.note.name));
 
         // Note (now returns NoteDetail with tags and collection)
-        let result = get_by_name(&db, EntityKind::Note, &data.note.name)
+        let result = get_one(&db, EntityKind::Note, &data.note.name)
             .await
             .unwrap();
         let Some(GetByNameQueryResult::Note(note)) = result else {
@@ -301,7 +295,7 @@ mod tests {
         assert!(note.tags.iter().any(|t| *t == data.tag.tag));
 
         // Tag
-        let result = get_by_name(&db, EntityKind::Tag, &data.tag.tag.to_value())
+        let result = get_one(&db, EntityKind::Tag, &data.tag.tag.to_value())
             .await
             .unwrap();
         let Some(GetByNameQueryResult::Tag(tag)) = result else {

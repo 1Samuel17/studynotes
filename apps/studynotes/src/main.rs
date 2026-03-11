@@ -1,8 +1,10 @@
 use clap::{Args, Parser, Subcommand};
 use database::connection::{check_db, set_db_options};
-use database::crud::get::{
-    EntityKind, GetAllQueryResult, GetByNameQueryResult, get_all, get_by_name,
-};
+use database::crud::delete::delete_one;
+use database::crud::get::{GetAllQueryResult, GetByNameQueryResult, get_all, get_one};
+use database::crud::new::{CreateResult, NewEntityData, create_one};
+use database::crud::update::{UpdateEntityData, UpdateResult, update_one};
+use database::crud::EntityKind;
 use sea_orm::Database;
 use tracing_subscriber::EnvFilter;
 
@@ -34,6 +36,21 @@ struct CollectionArgs {
     /// Show the notebooks of a specific collection
     #[arg(long)]
     show: Option<String>,
+    /// Create a new collection (requires --name and --description)
+    #[arg(long)]
+    new: bool,
+    /// Update an existing collection by name (use --name/--description to set new values)
+    #[arg(long)]
+    update: Option<String>,
+    /// Delete a collection by name
+    #[arg(long)]
+    delete: Option<String>,
+    /// Name for the collection (used with --new or --update)
+    #[arg(long)]
+    name: Option<String>,
+    /// Description for the collection (used with --new or --update)
+    #[arg(long)]
+    description: Option<String>,
 }
 
 #[derive(Args)]
@@ -44,6 +61,24 @@ struct NotebookArgs {
     /// Show a list of the notes of a specific notebook
     #[arg(long)]
     show: Option<String>,
+    /// Create a new notebook (requires --name, --description, --collection)
+    #[arg(long)]
+    new: bool,
+    /// Update an existing notebook by name (use --name/--description/--collection to set new values)
+    #[arg(long)]
+    update: Option<String>,
+    /// Delete a notebook by name
+    #[arg(long)]
+    delete: Option<String>,
+    /// Name for the notebook (used with --new or --update)
+    #[arg(long)]
+    name: Option<String>,
+    /// Description as JSON for the notebook (used with --new or --update)
+    #[arg(long)]
+    description: Option<String>,
+    /// Collection name the notebook belongs to (used with --new or --update)
+    #[arg(long)]
+    collection: Option<String>,
 }
 
 #[derive(Args)]
@@ -54,6 +89,27 @@ struct NoteArgs {
     /// Show the content of a specific note
     #[arg(long)]
     show: Option<String>,
+    /// Create a new note (requires --name, --topic, --content, --notebook)
+    #[arg(long)]
+    new: bool,
+    /// Update an existing note by name (use --name/--topic/--content/--notebook to set new values)
+    #[arg(long)]
+    update: Option<String>,
+    /// Delete a note by name
+    #[arg(long)]
+    delete: Option<String>,
+    /// Name for the note (used with --new or --update)
+    #[arg(long)]
+    name: Option<String>,
+    /// Topic for the note (used with --new or --update)
+    #[arg(long)]
+    topic: Option<String>,
+    /// Content as JSON for the note (used with --new or --update)
+    #[arg(long)]
+    content: Option<String>,
+    /// Notebook name the note belongs to (used with --new or --update)
+    #[arg(long)]
+    notebook: Option<String>,
 }
 #[derive(Args)]
 struct TagArgs {
@@ -63,6 +119,12 @@ struct TagArgs {
     /// Show the notes associated with a specific tag
     #[arg(long)]
     show: Option<String>,
+    /// Create a new tag by its value (e.g. "Important")
+    #[arg(long)]
+    new: Option<String>,
+    /// Delete a tag by its value
+    #[arg(long)]
+    delete: Option<String>,
 }
 
 // Application entry point
@@ -91,7 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // database::sampledata::insert_sample_data(db).await?;
 
     // Delete sample data from the database after testing
-    // database::sampledata::remove_sample_data(db).await?;
+    database::sampledata::remove_sample_data(db).await?;
 
     // Parse command-line arguments
     let cli = Cli::parse();
@@ -99,7 +161,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         // Collections command
         Commands::Collections(args) => {
-            // If --all flag is set, retrieve and display all collections
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Collection).await?;
                 if let GetAllQueryResult::Collections(collections) = result {
@@ -113,10 +174,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 } else {
                     println!("No collections found.");
                 }
-            }
-            // If --show flag is set with a collection name, retrieve and display that collection's details
-            if let Some(collection_name) = args.show {
-                let result = get_by_name(db, EntityKind::Collection, &collection_name).await?;
+            } else if let Some(collection_name) = args.show {
+                let result = get_one(db, EntityKind::Collection, &collection_name).await?;
                 match result {
                     Some(GetByNameQueryResult::Collection(collection)) => {
                         println!("\nCollection: {}", collection.name);
@@ -135,11 +194,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     _ => println!("Collection not found."),
                 }
+            } else if args.new {
+                let name = args.name.expect("--name is required when using --new");
+                let description = args
+                    .description
+                    .expect("--description is required when using --new");
+                let result = create_one(
+                    db,
+                    NewEntityData::Collection { name, description },
+                )
+                .await?;
+                if let CreateResult::Collection(col) = result {
+                    println!("Created collection: {}", col.name);
+                }
+            } else if let Some(current_name) = args.update {
+                let result = update_one(
+                    db,
+                    &current_name,
+                    UpdateEntityData::Collection {
+                        name: args.name,
+                        description: args.description,
+                    },
+                )
+                .await?;
+                match result {
+                    Some(UpdateResult::Collection(col)) => {
+                        println!("Updated collection: {}", col.name);
+                    }
+                    _ => println!("Collection '{}' not found.", current_name),
+                }
+            } else if let Some(collection_name) = args.delete {
+                let deleted = delete_one(db, EntityKind::Collection, &collection_name).await?;
+                if deleted {
+                    println!("Deleted collection: {}", collection_name);
+                } else {
+                    println!("Collection '{}' not found.", collection_name);
+                }
             }
         }
         // Notebooks command
         Commands::Notebooks(args) => {
-            // If --all flag is set, retrieve and display all notebooks
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Notebook).await?;
                 if let GetAllQueryResult::Notebooks(notebooks) = result {
@@ -153,10 +247,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 } else {
                     println!("No notebooks found.");
                 }
-            }
-            // If --show flag is set with a notebook name, retrieve and display that notebook's details
-            if let Some(notebook_name) = args.show {
-                let result = get_by_name(db, EntityKind::Notebook, &notebook_name).await?;
+            } else if let Some(notebook_name) = args.show {
+                let result = get_one(db, EntityKind::Notebook, &notebook_name).await?;
                 match result {
                     Some(GetByNameQueryResult::Notebook(notebook)) => {
                         println!("\nNotebook: {}", notebook.name);
@@ -180,11 +272,60 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     _ => println!("Notebook not found."),
                 }
+            } else if args.new {
+                let name = args.name.expect("--name is required when using --new");
+                let desc_str = args
+                    .description
+                    .expect("--description is required when using --new");
+                let description: serde_json::Value = serde_json::from_str(&desc_str)
+                    .unwrap_or_else(|_| serde_json::json!({ "text": desc_str }));
+                let collection_name = args
+                    .collection
+                    .expect("--collection is required when using --new");
+                let result = create_one(
+                    db,
+                    NewEntityData::Notebook {
+                        name,
+                        description,
+                        collection_name,
+                    },
+                )
+                .await?;
+                if let CreateResult::Notebook(nb) = result {
+                    println!("Created notebook: {} (collection: {})", nb.name, nb.collection_name);
+                }
+            } else if let Some(current_name) = args.update {
+                let description = args.description.map(|d| {
+                    serde_json::from_str(&d)
+                        .unwrap_or_else(|_| serde_json::json!({ "text": d }))
+                });
+                let result = update_one(
+                    db,
+                    &current_name,
+                    UpdateEntityData::Notebook {
+                        name: args.name,
+                        description,
+                        collection_name: args.collection,
+                    },
+                )
+                .await?;
+                match result {
+                    Some(UpdateResult::Notebook(nb)) => {
+                        println!("Updated notebook: {}", nb.name);
+                    }
+                    _ => println!("Notebook '{}' not found.", current_name),
+                }
+            } else if let Some(notebook_name) = args.delete {
+                let deleted = delete_one(db, EntityKind::Notebook, &notebook_name).await?;
+                if deleted {
+                    println!("Deleted notebook: {}", notebook_name);
+                } else {
+                    println!("Notebook '{}' not found.", notebook_name);
+                }
             }
         }
         // Notes command
         Commands::Notes(args) => {
-            // If --all flag is set, retrieve and display all notes
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Note).await?;
                 if let GetAllQueryResult::Notes(notes) = result {
@@ -198,10 +339,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 } else {
                     println!("No notes found.");
                 }
-            }
-            // If --show flag is set with a note name, retrieve and display that note's details
-            if let Some(note_name) = args.show {
-                let result = get_by_name(db, EntityKind::Note, &note_name).await?;
+            } else if let Some(note_name) = args.show {
+                let result = get_one(db, EntityKind::Note, &note_name).await?;
                 match result {
                     Some(GetByNameQueryResult::Note(note)) => {
                         println!("\nNote: {}", note.name);
@@ -223,11 +362,63 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     _ => println!("Note not found."),
                 }
+            } else if args.new {
+                let name = args.name.expect("--name is required when using --new");
+                let topic = args.topic.expect("--topic is required when using --new");
+                let content_str = args
+                    .content
+                    .expect("--content is required when using --new");
+                let content: serde_json::Value = serde_json::from_str(&content_str)
+                    .unwrap_or_else(|_| serde_json::json!({ "text": content_str }));
+                let notebook_name = args
+                    .notebook
+                    .expect("--notebook is required when using --new");
+                let result = create_one(
+                    db,
+                    NewEntityData::Note {
+                        name,
+                        topic,
+                        content,
+                        notebook_name,
+                    },
+                )
+                .await?;
+                if let CreateResult::Note(n) = result {
+                    println!("Created note: {} (notebook: {})", n.name, n.notebook_name);
+                }
+            } else if let Some(current_name) = args.update {
+                let content = args.content.map(|c| {
+                    serde_json::from_str(&c)
+                        .unwrap_or_else(|_| serde_json::json!({ "text": c }))
+                });
+                let result = update_one(
+                    db,
+                    &current_name,
+                    UpdateEntityData::Note {
+                        name: args.name,
+                        topic: args.topic,
+                        content,
+                        notebook_name: args.notebook,
+                    },
+                )
+                .await?;
+                match result {
+                    Some(UpdateResult::Note(n)) => {
+                        println!("Updated note: {}", n.name);
+                    }
+                    _ => println!("Note '{}' not found.", current_name),
+                }
+            } else if let Some(note_name) = args.delete {
+                let deleted = delete_one(db, EntityKind::Note, &note_name).await?;
+                if deleted {
+                    println!("Deleted note: {}", note_name);
+                } else {
+                    println!("Note '{}' not found.", note_name);
+                }
             }
         }
         // Tags command
         Commands::Tags(args) => {
-            // If --all flag is set, retrieve and display all tags
             if args.all {
                 let result: GetAllQueryResult = get_all(db, EntityKind::Tag).await?;
                 if let GetAllQueryResult::Tags(tags) = result {
@@ -238,15 +429,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 } else {
                     println!("No tags found.");
                 }
-            }
-            // If --show flag is set with a tag name, retrieve and display that tag's details
-            if let Some(tag_name) = args.show {
-                let result = get_by_name(db, EntityKind::Tag, &tag_name).await?;
+            } else if let Some(tag_name) = args.show {
+                let result = get_one(db, EntityKind::Tag, &tag_name).await?;
                 match result {
                     Some(GetByNameQueryResult::Tag(tag)) => {
                         println!("\nTag: {:?}", tag.tag);
                     }
                     _ => println!("Tag not found."),
+                }
+            } else if let Some(tag_value) = args.new {
+                use database::models::taxonomy::Tag;
+                use sea_orm::{ActiveEnum, Iterable};
+                let tag_variants: Vec<Tag> = Tag::iter().collect();
+                let matched = tag_variants.iter().find(|t: &&Tag| t.to_value() == tag_value);
+                match matched {
+                    Some(tag_enum) => {
+                        let result = create_one(
+                            db,
+                            NewEntityData::Tag {
+                                tag: tag_enum.clone(),
+                            },
+                        )
+                        .await?;
+                        if let CreateResult::Tag(t) = result {
+                            println!("Created tag: {:?}", t.tag);
+                        }
+                    }
+                    None => {
+                        println!("Unknown tag value '{}'. Available tags:", tag_value);
+                        for t in &tag_variants {
+                            println!("  - {}", t.to_value());
+                        }
+                    }
+                }
+            } else if let Some(tag_name) = args.delete {
+                let deleted = delete_one(db, EntityKind::Tag, &tag_name).await?;
+                if deleted {
+                    println!("Deleted tag: {}", tag_name);
+                } else {
+                    println!("Tag '{}' not found.", tag_name);
                 }
             }
         }
