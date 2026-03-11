@@ -43,13 +43,13 @@ struct CollectionArgs {
     #[arg(short, long)]
     update: Option<String>,
     /// Delete a collection by name
-    #[arg(short, long)]
+    #[arg(long = "del")]
     delete: Option<String>,
     /// Name for the collection (used with --new or --update)
     #[arg(short, long)]
     name: Option<String>,
     /// Description for the collection (used with --new or --update)
-    #[arg(short, long = "desc")]
+    #[arg(long = "desc")]
     description: Option<String>,
 }
 
@@ -68,13 +68,13 @@ struct NotebookArgs {
     #[arg(short, long)]
     update: Option<String>,
     /// Delete a notebook by name
-    #[arg(short, long)]
+    #[arg(long = "del")]
     delete: Option<String>,
     /// Name for the notebook (used with --new or --update)
     #[arg(short, long)]
     name: Option<String>,
     /// Description as JSON for the notebook (used with --new or --update)
-    #[arg(short, long = "desc")]
+    #[arg(long = "desc")]
     description: Option<String>,
     /// Collection name the notebook belongs to (used with --new or --update)
     #[arg(short, long)]
@@ -96,7 +96,7 @@ struct NoteArgs {
     #[arg(short, long)]
     update: Option<String>,
     /// Delete a note by name
-    #[arg(short, long)]
+    #[arg(long = "del")]
     delete: Option<String>,
     /// Name for the note (used with --new or --update)
     #[arg(short, long)]
