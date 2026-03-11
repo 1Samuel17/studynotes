@@ -187,11 +187,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             println!("  Notebooks: (none)");
                         } else {
                             println!("  Notebooks:");
-                            for notebook in &collection.notebooks {
-                                println!(
-                                    "    - {} | Description: {} | Collection: {}",
-                                    notebook.name, notebook.description, notebook.collection_name
-                                );
+                            for name in &collection.notebooks {
+                                println!("    - {}", name);
                             }
                         }
                     }
@@ -326,8 +323,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             println!("  Notes:");
                             for note in &notebook.notes {
                                 println!(
-                                    "    - {} | Topic: {} | Notebook: {}",
-                                    note.name, note.topic, note.notebook_name
+                                    "    - {} | Topic: {}",
+                                    note.name, note.topic,
                                 );
                             }
                         }

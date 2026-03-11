@@ -43,7 +43,7 @@ pub struct NotebookDetail {
 pub struct CollectionDetail {
     pub name: String,
     pub description: String,
-    pub notebooks: Vec<NotebookSummary>,
+    pub notebooks: Vec<String>,
 }
 
 /// Holds the result of a `get_all` query, typed by entity.
@@ -72,14 +72,16 @@ pub async fn get_all(
     match kind {
         EntityKind::Collection => {
             let rows = collection::Entity::find().all(db).await?;
-            let summaries = rows
-                .into_iter()
-                .map(|c| CollectionDetail {
+            let mut summaries = Vec::new();
+            for c in rows {
+                let notebooks = c.find_related(notebook::Entity).all(db).await?;
+                let notebook_names = notebooks.into_iter().map(|nb| nb.name).collect();
+                summaries.push(CollectionDetail {
                     name: c.name,
                     description: c.description,
-                    notebooks: Vec::new(), // This will be populated later if needed
-                })
-                .collect();
+                    notebooks: notebook_names,
+                });
+            }
             Ok(GetAllQueryResult::Collections(summaries))
         }
         EntityKind::Notebook => {
@@ -125,13 +127,18 @@ pub async fn get_one(
                 .filter(collection::Column::Name.eq(name))
                 .one(db)
                 .await?;
-            Ok(row.map(|c| {
-                GetByNameQueryResult::Collection(CollectionDetail {
-                    name: c.name,
-                    description: c.description,
-                    notebooks: Vec::new(), // This will be populated later if needed
-                })
-            }))
+            match row {
+                Some(c) => {
+                    let notebooks = c.find_related(notebook::Entity).all(db).await?;
+                    let notebook_names = notebooks.into_iter().map(|nb| nb.name).collect();
+                    Ok(Some(GetByNameQueryResult::Collection(CollectionDetail {
+                        name: c.name,
+                        description: c.description,
+                        notebooks: notebook_names,
+                    })))
+                }
+                None => Ok(None),
+            }
         }
         EntityKind::Notebook => {
             let row = notebook::Entity::find()
