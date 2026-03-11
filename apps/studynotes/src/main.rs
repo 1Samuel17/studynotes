@@ -273,11 +273,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Some(GetByNameQueryResult::Notebook(notebook)) => {
                         println!("\nNotebook: {}", notebook.name);
                         println!("  Collection: {}", notebook.collection_name);
-                        println!(
-                            "  Description:\n{}",
-                            serde_json::to_string_pretty(&notebook.description)
-                                .unwrap_or_else(|_| notebook.description.to_string())
-                        );
+                        println!("  Description:");
+                        let text = notebook
+                            .description
+                            .get("text")
+                            .and_then(|t| t.as_str());
+                        if let Some(s) = text {
+                            let key_indent = "      ";
+                            let val_indent = "          ";
+                            let print_entry = |key: &str, val: &str| {
+                                println!("{}{}:", key_indent, key);
+                                println!("{}{}", val_indent, val);
+                            };
+                            if let Ok(parsed) =
+                                serde_json::from_str::<serde_json::Value>(s)
+                            {
+                                if let Some(obj) = parsed.as_object() {
+                                    for (key, val) in obj {
+                                        print_entry(key, val.as_str().unwrap_or(&val.to_string()));
+                                    }
+                                } else {
+                                    println!(
+                                        "{}",
+                                        serde_json::to_string_pretty(&parsed)
+                                            .unwrap_or_else(|_| s.to_string())
+                                    );
+                                }
+                            } else {
+                                // Nested JSON didn't parse; print each key/value via string extraction
+                                for part in s.trim_matches(|c| c == '{' || c == '}').split("\",") {
+                                    let part = part.trim().trim_matches('"');
+                                    if let Some((key, val)) = part.split_once("\": \"") {
+                                        print_entry(key.trim_matches('"'), val);
+                                    } else if let Some((key, val)) = part.split_once("\":") {
+                                        print_entry(key.trim_matches('"'), val.trim().trim_matches('"'));
+                                    }
+                                }
+                            }
+                        } else {
+                            println!(
+                                "{}",
+                                serde_json::to_string_pretty(&notebook.description)
+                                    .unwrap_or_else(|_| notebook.description.to_string())
+                            );
+                        }
                         if notebook.notes.is_empty() {
                             println!("  Notes: (none)");
                         } else {
