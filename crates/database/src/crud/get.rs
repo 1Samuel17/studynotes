@@ -2,7 +2,6 @@ use crate::crud::EntityKind;
 use crate::models::{collection, note, note_tag, notebook, tag, taxonomy};
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, ModelTrait, QueryFilter};
 
-
 /// Summary view of a note (for listing).
 #[derive(Debug)]
 pub struct NoteSummary {

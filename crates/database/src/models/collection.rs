@@ -14,7 +14,6 @@ pub struct Model {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-
 // Unit test for the Collection entity
 #[cfg(test)]
 mod tests {
@@ -41,9 +40,6 @@ mod tests {
         // Insert the collection into the database and verify it was created correctly
         let inserted_collection = new_collection.insert(&db).await.unwrap();
         assert_eq!(inserted_collection.name, "Test Collection");
-        assert_eq!(
-            inserted_collection.description,
-            "A collection for testing"
-        );
+        assert_eq!(inserted_collection.description, "A collection for testing");
     }
 }

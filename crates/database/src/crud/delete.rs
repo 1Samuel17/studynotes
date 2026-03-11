@@ -79,8 +79,12 @@ mod tests {
 
         // Delete dependents in FK order: note_tags -> notes -> notebooks -> collection
         note_tag::Entity::delete_many().exec(&db).await.unwrap();
-        delete_one(&db, EntityKind::Note, &data.note.name).await.unwrap();
-        delete_one(&db, EntityKind::Notebook, &data.notebook.name).await.unwrap();
+        delete_one(&db, EntityKind::Note, &data.note.name)
+            .await
+            .unwrap();
+        delete_one(&db, EntityKind::Notebook, &data.notebook.name)
+            .await
+            .unwrap();
 
         let deleted = delete_one(&db, EntityKind::Collection, &data.collection.name)
             .await

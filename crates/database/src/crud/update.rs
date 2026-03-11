@@ -1,5 +1,7 @@
 use crate::models::{collection, note, notebook};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set,
+};
 
 /// Data describing which fields to update on an entity.
 /// Only `Some` fields will be modified.
@@ -166,7 +168,10 @@ mod tests {
             panic!("expected Notebook")
         };
         assert_eq!(nb.name, data.notebook.name);
-        assert_eq!(nb.description, serde_json::json!({"text": "Updated notebook"}));
+        assert_eq!(
+            nb.description,
+            serde_json::json!({"text": "Updated notebook"})
+        );
     }
 
     #[tokio::test]

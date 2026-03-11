@@ -1,10 +1,10 @@
 use clap::{Args, Parser, Subcommand};
 use database::connection::{check_db, set_db_options};
+use database::crud::EntityKind;
 use database::crud::delete::delete_one;
 use database::crud::get::{GetAllQueryResult, GetByNameQueryResult, get_all, get_one};
 use database::crud::new::{CreateResult, NewEntityData, create_one};
 use database::crud::update::{UpdateEntityData, UpdateResult, update_one};
-use database::crud::EntityKind;
 use sea_orm::Database;
 use tracing_subscriber::EnvFilter;
 
@@ -40,16 +40,16 @@ struct CollectionArgs {
     #[arg(long)]
     new: bool,
     /// Update an existing collection by name (use --name/--description to set new values)
-    #[arg(long)]
+    #[arg(short, long)]
     update: Option<String>,
     /// Delete a collection by name
-    #[arg(long)]
+    #[arg(short, long)]
     delete: Option<String>,
     /// Name for the collection (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long)]
     name: Option<String>,
     /// Description for the collection (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long = "desc")]
     description: Option<String>,
 }
 
@@ -65,19 +65,19 @@ struct NotebookArgs {
     #[arg(long)]
     new: bool,
     /// Update an existing notebook by name (use --name/--description/--collection to set new values)
-    #[arg(long)]
+    #[arg(short, long)]
     update: Option<String>,
     /// Delete a notebook by name
-    #[arg(long)]
+    #[arg(short, long)]
     delete: Option<String>,
     /// Name for the notebook (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long)]
     name: Option<String>,
     /// Description as JSON for the notebook (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long = "desc")]
     description: Option<String>,
     /// Collection name the notebook belongs to (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long)]
     collection: Option<String>,
 }
 
@@ -93,22 +93,22 @@ struct NoteArgs {
     #[arg(long)]
     new: bool,
     /// Update an existing note by name (use --name/--topic/--content/--notebook to set new values)
-    #[arg(long)]
+    #[arg(short, long)]
     update: Option<String>,
     /// Delete a note by name
-    #[arg(long)]
+    #[arg(short, long)]
     delete: Option<String>,
     /// Name for the note (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long)]
     name: Option<String>,
     /// Topic for the note (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long)]
     topic: Option<String>,
     /// Content as JSON for the note (used with --new or --update)
-    #[arg(long)]
+    #[arg(short, long)]
     content: Option<String>,
     /// Notebook name the note belongs to (used with --new or --update)
-    #[arg(long)]
+    #[arg(short = 'b', long)]
     notebook: Option<String>,
 }
 #[derive(Args)]
@@ -199,11 +199,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let description = args
                     .description
                     .expect("--description is required when using --new");
-                let result = create_one(
-                    db,
-                    NewEntityData::Collection { name, description },
-                )
-                .await?;
+                let result =
+                    create_one(db, NewEntityData::Collection { name, description }).await?;
                 if let CreateResult::Collection(col) = result {
                     println!("Created collection: {}", col.name);
                 }
@@ -292,12 +289,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .await?;
                 if let CreateResult::Notebook(nb) = result {
-                    println!("Created notebook: {} (collection: {})", nb.name, nb.collection_name);
+                    println!(
+                        "Created notebook: {} (collection: {})",
+                        nb.name, nb.collection_name
+                    );
                 }
             } else if let Some(current_name) = args.update {
                 let description = args.description.map(|d| {
-                    serde_json::from_str(&d)
-                        .unwrap_or_else(|_| serde_json::json!({ "text": d }))
+                    serde_json::from_str(&d).unwrap_or_else(|_| serde_json::json!({ "text": d }))
                 });
                 let result = update_one(
                     db,
@@ -388,8 +387,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             } else if let Some(current_name) = args.update {
                 let content = args.content.map(|c| {
-                    serde_json::from_str(&c)
-                        .unwrap_or_else(|_| serde_json::json!({ "text": c }))
+                    serde_json::from_str(&c).unwrap_or_else(|_| serde_json::json!({ "text": c }))
                 });
                 let result = update_one(
                     db,
@@ -441,7 +439,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 use database::models::taxonomy::Tag;
                 use sea_orm::{ActiveEnum, Iterable};
                 let tag_variants: Vec<Tag> = Tag::iter().collect();
-                let matched = tag_variants.iter().find(|t: &&Tag| t.to_value() == tag_value);
+                let matched = tag_variants
+                    .iter()
+                    .find(|t: &&Tag| t.to_value() == tag_value);
                 match matched {
                     Some(tag_enum) => {
                         let result = create_one(
