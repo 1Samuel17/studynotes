@@ -62,4 +62,8 @@ pub enum Tag {
     VersionControl,
     #[sea_orm(string_value = "Documentation")]
     Documentation,
+    #[sea_orm(string_value = "Medical Software")]
+    MedicalSoftware,
+    #[sea_orm(string_value = "Medical Industry")]
+    MedicalIndustry,
 }

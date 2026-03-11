@@ -89,10 +89,10 @@ struct NoteArgs {
     /// Show the content of a specific note
     #[arg(long)]
     show: Option<String>,
-    /// Create a new note (requires --name, --topic, --content, --notebook)
+    /// Create a new note (requires --name and --notebook; --topic and --content are optional)
     #[arg(long)]
     new: bool,
-    /// Update an existing note by name (use --name/--topic/--content/--notebook to set new values)
+    /// Update an existing note by name (use --name/--topic/--content/--tags to set new values)
     #[arg(short, long)]
     update: Option<String>,
     /// Delete a note by name
@@ -107,9 +107,12 @@ struct NoteArgs {
     /// Content as JSON for the note (used with --new or --update)
     #[arg(short, long)]
     content: Option<String>,
-    /// Notebook name the note belongs to (used with --new or --update)
+    /// Notebook name the note belongs to (used with --new)
     #[arg(short = 'b', long)]
     notebook: Option<String>,
+    /// Comma-separated tags for the note (used with --update, e.g. "Important,Async")
+    #[arg(long, value_delimiter = ',')]
+    tags: Option<Vec<String>>,
 }
 #[derive(Args)]
 struct TagArgs {
@@ -425,12 +428,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             } else if args.new {
                 let name = args.name.expect("--name is required when using --new");
-                let topic = args.topic.expect("--topic is required when using --new");
-                let content_str = args
-                    .content
-                    .expect("--content is required when using --new");
-                let content: serde_json::Value = serde_json::from_str(&content_str)
-                    .unwrap_or_else(|_| serde_json::json!({ "text": content_str }));
+                let topic = args.topic.unwrap_or_default();
+                let content: serde_json::Value = match args.content {
+                    Some(content_str) => serde_json::from_str(&content_str)
+                        .unwrap_or_else(|_| serde_json::json!({ "text": content_str })),
+                    None => serde_json::json!({}),
+                };
                 let notebook_name = args
                     .notebook
                     .expect("--notebook is required when using --new");
@@ -458,7 +461,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         name: args.name,
                         topic: args.topic,
                         content,
-                        notebook_name: args.notebook,
+                        tags: args.tags,
                     },
                 )
                 .await?;

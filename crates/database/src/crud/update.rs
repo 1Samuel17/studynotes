@@ -1,4 +1,4 @@
-use crate::models::{collection, note, notebook};
+use crate::models::{collection, note, note_tag, notebook, tag};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set,
 };
@@ -19,7 +19,7 @@ pub enum UpdateEntityData {
         name: Option<String>,
         topic: Option<String>,
         content: Option<serde_json::Value>,
-        notebook_name: Option<String>,
+        tags: Option<Vec<String>>,
     },
 }
 
@@ -89,7 +89,7 @@ pub async fn update_one(
             name,
             topic,
             content,
-            notebook_name,
+            tags,
         } => {
             let row = note::Entity::find()
                 .filter(note::Column::Name.eq(current_name))
@@ -97,6 +97,7 @@ pub async fn update_one(
                 .await?;
             match row {
                 Some(model) => {
+                    let note_name = name.as_deref().unwrap_or(current_name).to_string();
                     let mut active: note::ActiveModel = model.into();
                     if let Some(n) = name {
                         active.name = Set(n);
@@ -107,10 +108,53 @@ pub async fn update_one(
                     if let Some(c) = content {
                         active.content = Set(c);
                     }
-                    if let Some(nb) = notebook_name {
-                        active.notebook_name = Set(nb);
-                    }
                     let result = active.update(db).await?;
+
+                    // Sync tags via note_tag join table
+                    if let Some(tag_values) = tags {
+                        // Remove existing note_tag entries for this note
+                        note_tag::Entity::delete_many()
+                            .filter(note_tag::Column::NoteName.eq(&note_name))
+                            .exec(db)
+                            .await?;
+                        // Ensure each tag exists in the tag table, then insert note_tag
+                        use crate::models::taxonomy::Tag as TagEnum;
+                        use sea_orm::{ActiveEnum, Iterable};
+                        for raw_tag in tag_values {
+                            let tag_val = raw_tag.trim().to_string();
+                            // Validate the tag value against known enum variants
+                            let tag_enum = TagEnum::iter()
+                                .find(|t| t.to_value() == tag_val);
+                            let Some(tag_enum) = tag_enum else {
+                                let valid: Vec<String> =
+                                    TagEnum::iter().map(|t| t.to_value()).collect();
+                                return Err(DbErr::Custom(format!(
+                                    "Unknown tag '{}'. Valid tags: {}",
+                                    tag_val,
+                                    valid.join(", ")
+                                )));
+                            };
+                            // Insert the tag if it doesn't already exist
+                            let exists = tag::Entity::find()
+                                .filter(tag::Column::Tag.eq(&tag_val))
+                                .one(db)
+                                .await?;
+                            if exists.is_none() {
+                                let new_tag = tag::ActiveModel {
+                                    tag: Set(tag_enum),
+                                    ..Default::default()
+                                };
+                                new_tag.insert(db).await?;
+                            }
+                            let nt = note_tag::ActiveModel {
+                                note_name: Set(note_name.clone()),
+                                tag_name: Set(tag_val),
+                                ..Default::default()
+                            };
+                            nt.insert(db).await?;
+                        }
+                    }
+
                     Ok(Some(UpdateResult::Note(result)))
                 }
                 None => Ok(None),
@@ -186,7 +230,7 @@ mod tests {
                 name: None,
                 topic: Some("Updated Topic".to_string()),
                 content: None,
-                notebook_name: None,
+                tags: None,
             },
         )
         .await
@@ -197,6 +241,48 @@ mod tests {
         };
         assert_eq!(n.name, data.note.name);
         assert_eq!(n.topic, "Updated Topic");
+    }
+
+    #[tokio::test]
+    async fn test_update_note_tags() {
+        use crate::models::{note_tag, taxonomy};
+        use sea_orm::{ActiveEnum, EntityTrait};
+
+        let db = testutils::setup_test_db().await.unwrap();
+        let data = testutils::insert_test_data(&db).await.unwrap();
+
+        // Update note with new tags
+        let result = update_one(
+            &db,
+            &data.note.name,
+            UpdateEntityData::Note {
+                name: None,
+                topic: None,
+                content: None,
+                tags: Some(vec![
+                    taxonomy::Tag::Async.to_value(),
+                    taxonomy::Tag::Testing.to_value(),
+                ]),
+            },
+        )
+        .await
+        .unwrap();
+
+        let Some(UpdateResult::Note(n)) = result else {
+            panic!("expected Note")
+        };
+        assert_eq!(n.name, data.note.name);
+
+        // Verify the note_tag entries were updated
+        let note_tags = note_tag::Entity::find()
+            .filter(note_tag::Column::NoteName.eq(&data.note.name))
+            .all(&db)
+            .await
+            .unwrap();
+        assert_eq!(note_tags.len(), 2);
+        let tag_names: Vec<&str> = note_tags.iter().map(|nt| nt.tag_name.as_str()).collect();
+        assert!(tag_names.contains(&taxonomy::Tag::Async.to_value().as_str()));
+        assert!(tag_names.contains(&taxonomy::Tag::Testing.to_value().as_str()));
     }
 
     #[tokio::test]
