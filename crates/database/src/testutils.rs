@@ -23,7 +23,7 @@ pub async fn setup_test_db() -> Result<DatabaseConnection> {
 pub async fn insert_test_data(db: &DatabaseConnection) -> Result<TestData> {
     let new_collection = collection::ActiveModel {
         name: Set("My Collection".to_string()),
-        description: Set(serde_json::json!({"text": "A collection of study notes"})),
+        description: Set("A collection of study notes".to_string()),
         ..Default::default()
     };
     let inserted_collection = new_collection.insert(db).await?;

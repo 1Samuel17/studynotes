@@ -5,19 +5,19 @@ use sea_orm::{ActiveEnum, ActiveModelTrait, DatabaseConnection, EntityTrait, Set
 pub async fn insert_sample_data(db: &DatabaseConnection) -> anyhow::Result<()> {
     let new_collection_1 = collection::ActiveModel {
         name: Set("My Collection 1".to_string()),
-        description: Set(serde_json::json!({"text": "A collection of study notes 1"})),
+        description: Set("A collection of study notes 1".to_string()),
         ..Default::default()
     };
 
     let new_collection_2 = collection::ActiveModel {
         name: Set("My Collection 2".to_string()),
-        description: Set(serde_json::json!({"text": "A collection of study notes 2"})),
+        description: Set("A collection of study notes 2".to_string()),
         ..Default::default()
     };
 
     let new_collection_3 = collection::ActiveModel {
         name: Set("My Collection 3".to_string()),
-        description: Set(serde_json::json!({"text": "A collection of study notes 3"})),
+        description: Set("A collection of study notes 3".to_string()),
         ..Default::default()
     };
 

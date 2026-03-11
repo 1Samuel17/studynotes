@@ -33,7 +33,7 @@ mod tests {
         // Create a collection to associate with notebook
         let new_collection = super::super::collection::ActiveModel {
             name: Set("Test Collection".to_string()),
-            description: Set(serde_json::json!({"text": "A collection for testing"})),
+            description: Set("A collection for testing".to_string()),
             ..Default::default()
         };
         let inserted_collection = new_collection.insert(&db).await.unwrap();

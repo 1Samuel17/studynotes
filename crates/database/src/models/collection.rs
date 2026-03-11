@@ -7,12 +7,13 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(unique, primary_key, auto_increment = false)]
     pub name: String,
-    pub description: Json,
+    pub description: String,
     #[sea_orm(has_many)]
     pub notebooks: HasMany<super::notebook::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
 
 // Unit test for the Collection entity
 #[cfg(test)]
@@ -33,7 +34,7 @@ mod tests {
         // Create a new collection
         let new_collection = ActiveModel {
             name: Set("Test Collection".to_string()),
-            description: Set(serde_json::json!({"text": "A collection for testing"})),
+            description: Set("A collection for testing".to_string()),
             ..Default::default()
         };
 
@@ -42,7 +43,7 @@ mod tests {
         assert_eq!(inserted_collection.name, "Test Collection");
         assert_eq!(
             inserted_collection.description,
-            serde_json::json!({"text": "A collection for testing"})
+            "A collection for testing"
         );
     }
 }

@@ -49,7 +49,7 @@ pub struct NotebookDetail {
 #[derive(Debug)]
 pub struct CollectionDetail {
     pub name: String,
-    pub description: serde_json::Value,
+    pub description: String,
     pub notebooks: Vec<NotebookSummary>,
 }
 

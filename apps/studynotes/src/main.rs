@@ -120,11 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 match result {
                     Some(GetByNameQueryResult::Collection(collection)) => {
                         println!("\nCollection: {}", collection.name);
-                        println!(
-                            "  Description:\n{}",
-                            serde_json::to_string_pretty(&collection.description)
-                                .unwrap_or_else(|_| collection.description.to_string())
-                        );
+                        println!("  Description: {}", collection.description);
                         if collection.notebooks.is_empty() {
                             println!("  Notebooks: (none)");
                         } else {
